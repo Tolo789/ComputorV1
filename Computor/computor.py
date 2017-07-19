@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, getopt
+import sys
 
 class bcolors:
     HEADER = '\033[95m'
@@ -12,18 +12,23 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 def printUsage():
-	print 'USAGE:\n $> python computor.py [options] "polinomial equation"\n'
+	print 'USAGE:\n $> python computor.py [option] "polinomial equation"\n'
 	print "OPTIONS: (you need to include the '-')"
 	print ' -h\tdisplay help and exit'
 	print ' -p\tprints every step of the resolver'
 	sys.exit(2)
 
+
 def exitWithError(error):
+	printHelp = False
 	if error == -1:
 		message = 'No polinomial equation given !!\n'
+		printHelp = True
 	elif error == -2:
 		message = 'Wrong parameters given !!\n'
+		printHelp = True
 	elif error == -3:
 		message = 'Lexical error in the equation !!\n'
 	elif error == -4:
@@ -59,7 +64,10 @@ def exitWithError(error):
 
 	print bcolors.FAIL + 'ERROR - ' + message + bcolors.ENDC
 
-	printUsage()
+	if printHelp:
+		printUsage()
+	sys.exit(2)
+
 
 def printEquation(equation):
 	output = ""
@@ -71,6 +79,7 @@ def printEquation(equation):
 
 	print 'Equation ==> ' + output
 
+
 def ft_pow(base, power):
 	i = 0
 	ret = 1
@@ -81,7 +90,8 @@ def ft_pow(base, power):
 		i += 1
 	return ret
 
-def parseOption(argv):
+
+def parseArgv(argv):
 	debug_option = False
 	equation = ""
 	argc = len(argv)
@@ -103,8 +113,9 @@ def parseOption(argv):
 
 	return equation, debug_option
 
+
 def lexicalCheck(equation):
-	split_equation = []
+	splitEquation = []
 	okChars = {'+', '-', '*', '/', 'X', '^', '(', ')', '=', '.'}
 	tmpNumber = 0
 	decimalCount = 0
@@ -135,23 +146,23 @@ def lexicalCheck(equation):
 			elif isDecimal and decimalCount == 0:
 				exitWithError(-13)
 			elif isTmpNumber:
-				split_equation.append(str(tmpNumber))
+				splitEquation.append(str(tmpNumber))
 				isTmpNumber = False
 				isDecimal = False
-				split_equation.append(c)
+				splitEquation.append(c)
 			else:
-				split_equation.append(c)
+				splitEquation.append(c)
 
 	if isTmpNumber:
-		split_equation.append(tmpNumber)
+		splitEquation.append(str(tmpNumber))
 
-	if len(split_equation) == 0:
+	if len(splitEquation) == 0:
 		exitWithError(-4)
-	elif not '=' in split_equation:
+	elif not '=' in splitEquation:
 		exitWithError(-5)
 
+	return splitEquation
 
-	return split_equation
 
 def bringRightToLeft(equation):
 	splitIndex = equation.index('=')
@@ -174,6 +185,7 @@ def bringRightToLeft(equation):
 		exitWithError(-9)
 	return leftSide
 
+
 def syntaxCheck(extract):
 	print "Parenthesis extracted: "
 	print extract
@@ -181,15 +193,13 @@ def syntaxCheck(extract):
 	length = len(extract)
 	if length == 0:
 		exitWithError(-10)
-
 	index = 0
-	reworkedExtract = []
 	prevVal = None
 	allSimbols = {'+', '-', '*', '/', '^'}
 	while index < length:
 		currentVal = extract[index]
 		if currentVal in allSimbols:
-			if currentVal == '*' or currentVal == '/' or currentVal == '.':
+			if currentVal == '*' or currentVal == '/' or currentVal == '+':
 				if prevVal == None or prevVal in allSimbols:
 					exitWithError(-11)
 			elif currentVal == '^' and not prevVal == 'X':
@@ -202,20 +212,24 @@ def syntaxCheck(extract):
 			exitWithError(-15)
 		elif not currentVal == 'X' and float(currentVal) == 0 and prevVal == '/':
 			exitWithError(-17)
-
-
 		prevVal = currentVal
-
-
 		index += 1
+
 	if currentVal in allSimbols:
 		exitWithError(-11)
 
+
 def resolveExtract(extract):
 	# TODO
+	# do all '*' annd '/', then sum the coefficients with the same grade
+	data = {0:0}
 	coefficient = 0
 	grade = 0
+	index = 0
+	while index < len(extract):
+		index += 1
 
+	return extract
 
 
 def reduceEquation(equation, debug_option):
@@ -234,8 +248,9 @@ def reduceEquation(equation, debug_option):
 			exitWithError(-6)
 		else:
 			extract = equation[start + 1:end]
-			extract = syntaxCheck(extract)
+			syntaxCheck(extract)
 			# TODO: simplify parenthesis
+			extract = resolveExtract(extract)
 			# TODO: take out parenthesis
 			break
 	if ')' in equation:
@@ -243,7 +258,7 @@ def reduceEquation(equation, debug_option):
 
 
 def main(argv):
-	equation, debug_option = parseOption(argv)
+	equation, debug_option = parseArgv(argv)
 	equation = equation.replace(" ", "")
 
 	equation = lexicalCheck(equation)
