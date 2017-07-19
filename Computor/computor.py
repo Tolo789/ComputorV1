@@ -187,9 +187,6 @@ def bringRightToLeft(equation):
 
 
 def syntaxCheck(extract):
-	print "Parenthesis extracted: "
-	print extract
-
 	length = len(extract)
 	if length == 0:
 		exitWithError(-10)
@@ -205,21 +202,40 @@ def syntaxCheck(extract):
 			elif currentVal == '^' and not prevVal == 'X':
 				exitWithError(-16)
 			elif prevVal and prevVal in allSimbols:
-				if currentVal == '-' and prevVal == '+':
-					continue
-				exitWithError(-14)
+				if not currentVal == '-' or (currentVal == '-' and not prevVal == '+') :
+					exitWithError(-14)
 		elif prevVal == 'X':
 			exitWithError(-15)
 		elif not currentVal == 'X' and float(currentVal) == 0 and prevVal == '/':
 			exitWithError(-17)
 		prevVal = currentVal
 		index += 1
-
 	if currentVal in allSimbols:
 		exitWithError(-11)
 
+	return
+
+
+def replaceMinus(extract):
+	while '-' in extract:
+		index = extract.index('-')
+		nextVal = extract[index + 1]
+		if nextVal == 'X':
+			extract.insert(index + 1, str(-1.0))
+		else:
+			extract[index + 1] = str(float(nextVal) * -1.0)
+		if index == 0 or extract[index - 1] == '+':
+			del extract[index]
+		else:
+			extract[index] = '+'
+
+	return extract
 
 def resolveExtract(extract):
+	extract = replaceMinus(extract)
+	print "\nMinus replaced: "
+	print extract
+
 	# TODO
 	# do all '*' annd '/', then sum the coefficients with the same grade
 	data = {0:0}
@@ -227,6 +243,7 @@ def resolveExtract(extract):
 	grade = 0
 	index = 0
 	while index < len(extract):
+
 		index += 1
 
 	return extract
@@ -248,6 +265,10 @@ def reduceEquation(equation, debug_option):
 			exitWithError(-6)
 		else:
 			extract = equation[start + 1:end]
+
+			print "Parenthesis extracted: "
+			print extract
+
 			syntaxCheck(extract)
 			# TODO: simplify parenthesis
 			extract = resolveExtract(extract)
