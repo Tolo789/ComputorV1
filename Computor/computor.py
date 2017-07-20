@@ -46,7 +46,7 @@ def exitWithError(error):
 	elif error == -10:
 		message = 'Syntax error, missing values !!\n'
 	elif error == -11:
-		message = 'Syntax error, wrong usage of symbols !!\n'
+		message = 'Syntax error, operator at the start/end of expression !!\n'
 	elif error == -12:
 		message = "Syntax error, you have a '0' char that is not needed !!\n"
 	elif error == -13:
@@ -59,6 +59,8 @@ def exitWithError(error):
 		message = "Syntax error, wrong usage of '^' operator !!\n"
 	elif error == -17:
 		message = "Zero division detected !!\n"
+	elif error == -18:
+		message = "Syntax error, grade of a 'X' must be an integer equal or greather than 0 (no operation allowed) !!\n"
 	else:
 		message = 'Are you sure you know how to call this function ? (Error code: ' + str(error) + ')'
 
@@ -192,22 +194,34 @@ def syntaxCheck(extract):
 		exitWithError(-10)
 	index = 0
 	prevVal = None
+	isGrade = False
 	allSimbols = {'+', '-', '*', '/', '^'}
 	while index < length:
-		currentVal = extract[index]
+		currentVal = str(extract[index])
 		if currentVal in allSimbols:
-			if currentVal == '*' or currentVal == '/' or currentVal == '+':
-				if prevVal == None or prevVal in allSimbols:
-					exitWithError(-11)
-			elif currentVal == '^' and not prevVal == 'X':
-				exitWithError(-16)
+			if prevVal == None and not currentVal == '-':
+				exitWithError(-11)
+			if currentVal == '^':
+				if not prevVal == 'X':
+					exitWithError(-16)
+				isGrade = True
+			elif prevVal == 'X':
+				exitWithError(-15)
 			elif prevVal and prevVal in allSimbols:
 				if not currentVal == '-' or (currentVal == '-' and not prevVal == '+') :
 					exitWithError(-14)
+			elif isGrade and (currentVal == '*' or currentVal == '/'):
+				exitWithError(-18)
+			elif currentVal == '+' or currentVal == '-':
+				isGrade = False
+		elif currentVal == 'X' and prevVal == '/':
+			exitWithError(-15)
 		elif prevVal == 'X':
 			exitWithError(-15)
 		elif not currentVal == 'X' and float(currentVal) == 0 and prevVal == '/':
 			exitWithError(-17)
+		# TODO: do not accept decimal number as exponential values
+		#elif
 		prevVal = currentVal
 		index += 1
 	if currentVal in allSimbols:
