@@ -61,8 +61,10 @@ def exitWithError(error):
 		message = "Zero division detected !!\n"
 	elif error == -18:
 		message = "Syntax error, grade of a 'X' must be an integer equal or greather than 0 (no operation allowed) !!\n"
+	elif error == -19:
+		message = "Grades of 'X' must be integers !!\n"
 	else:
-		message = 'Are you sure you know how to call this function ? (Error code: ' + str(error) + ')'
+		message = bcolors.WARNING + 'Are you sure to know how to call this function ? (Error code: ' + str(error) + ')'
 
 	print bcolors.FAIL + 'ERROR - ' + message + bcolors.ENDC
 
@@ -205,23 +207,24 @@ def syntaxCheck(extract):
 				if not prevVal == 'X':
 					exitWithError(-16)
 				isGrade = True
-			elif prevVal == 'X':
+			elif prevVal == 'X' and (currentVal == '/' or currentVal == '*'):
 				exitWithError(-15)
 			elif prevVal and prevVal in allSimbols:
-				if not currentVal == '-' or (currentVal == '-' and not prevVal == '+') :
-					exitWithError(-14)
+				exitWithError(-14)
 			elif isGrade and (currentVal == '*' or currentVal == '/'):
 				exitWithError(-18)
 			elif currentVal == '+' or currentVal == '-':
 				isGrade = False
-		elif currentVal == 'X' and prevVal == '/':
-			exitWithError(-15)
 		elif prevVal == 'X':
+			exitWithError(-15)
+		elif currentVal == 'X' and prevVal == '/':
 			exitWithError(-15)
 		elif not currentVal == 'X' and float(currentVal) == 0 and prevVal == '/':
 			exitWithError(-17)
-		# TODO: do not accept decimal number as exponential values
-		#elif
+		elif not currentVal == 'X' and not currentVal == '.':
+			if prevVal == '^' and not float(currentVal) % 1 == 0:
+				print currentVal
+				exitWithError(-19)
 		prevVal = currentVal
 		index += 1
 	if currentVal in allSimbols:
@@ -252,11 +255,18 @@ def resolveExtract(extract):
 
 	# TODO
 	# do all '*' annd '/', then sum the coefficients with the same grade
-	data = {0:0}
-	coefficient = 0
-	grade = 0
+	data = None
+	coefficient = None
+	grade = None
 	index = 0
 	while index < len(extract):
+		currentVal = extract[index]
+		print currentVal
+		#if currentVal == '*' or '/':
+
+		if currentVal == 'X':
+			if not coefficient:
+				coefficient = 1;
 
 		index += 1
 
@@ -287,6 +297,8 @@ def reduceEquation(equation, debug_option):
 			# TODO: simplify parenthesis
 			extract = resolveExtract(extract)
 			# TODO: take out parenthesis
+			#nameOfFunction(extract)
+			# TODO: parenthesis checks
 			break
 	if ')' in equation:
 		exitWithError(-66)
