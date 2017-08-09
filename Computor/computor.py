@@ -64,6 +64,8 @@ def exitWithError(error):
 		message = "Syntax error, grade of a 'X' must be an integer equal or greather than 0 (no operation allowed) !!\n"
 	elif error == -19:
 		message = "Grades of 'X' must be integers !!\n"
+	elif error == -20:
+		message = "You can only put '*', '+' and '-' around parenthesis !!\n"
 	else:
 		message = bcolors.WARNING + 'Are you sure to know how to call this function ? (Error code: ' + str(error) + ')'
 
@@ -74,7 +76,7 @@ def exitWithError(error):
 	sys.exit(2)
 
 
-def printEquation(equation):
+def stringifyEquation(equation):
 	output = ""
 	for c in equation:
 		if not output == "":
@@ -82,7 +84,11 @@ def printEquation(equation):
 		output = output + str(c)
 	output = output + " = 0"
 
-	print bcolors.OKBLUE + 'Equation ==> ' + bcolors.ENDC + output
+	return output
+
+def printEquation(equation):
+
+	print bcolors.OKBLUE + 'Equation ==> ' + bcolors.ENDC + stringifyEquation(equation)
 
 def humanizeArray(extract):
 	output = ""
@@ -352,18 +358,43 @@ def resolveExtract(extract, debug_option):
 	data = addPolynom(coefficient, grade, data)
 	return data
 
-def resolveParenthesis(equation, rawData, start, end):
+def resolveParenthesis(equation, rawData, start, end, debug_option):
 
-	#print extract
-	equation[start + 1 : end] = convertDataToExpression(rawData)
+	minIndex = start
+	maxIndex = end + 1
+	notSupportedOperators = {'/', '^'}
+	if not start == 0:
+		if equation[start - 1] in notSupportedOperators:
+			exitWithError(-20)
+		elif equation[start - 1] == '-':
+			minIndex -= 1
+			rawData = {grade: -1 * coefficient for grade, coefficient in rawData.items()}
+		#TODO
+		elif equation[start - 1] == '*':
+			minIndex -= 1
+		# 	val = equation[minIndex]
+		# 	if minIndex
+		# 	i = minIndex
+		# 	while i > 0 and not (equation[i] == '+' or equation[i] = '-'):
+		# 		i -= 1
 
-	printEquation(equation)
+
+	newExtract = convertDataToExpression(rawData)
+	if not start == 0:
+		newExtract.insert(0, '+')
+	if debug_option > 1:
+		print bcolors.OKGREEN + "Parenthesis solved: " + bcolors.ENDC
+		print "\t" + humanizeArray(newExtract)
+	equation[minIndex: maxIndex] = newExtract
+
 	return equation
 
 def reduceEquation(equation, debug_option):
 	# TODO take out every parenthesis
 	reduced = False
 	while '(' in equation:
+		if debug_option > 0:
+			printEquation(equation)
 		index = equation.index('(')
 		while index < len(equation):
 			if equation[index] == '(':
@@ -388,13 +419,10 @@ def reduceEquation(equation, debug_option):
 				print bcolors.OKGREEN + "Extract simplified: " + bcolors.ENDC
 				print "\t" + humanizeArray(convertDataToExpression(rawData))
 			# TODO: take out parenthesis
-			equation = resolveParenthesis(equation, rawData, start, end)
-			# TODO: parenthesis checks
-			if debug_option > 0:
-				printEquation(equation)
-			break
+			equation = resolveParenthesis(equation, rawData, start, end, debug_option)
 	if ')' in equation:
 		exitWithError(-66)
+	return equation
 
 
 def main(argv):
@@ -403,10 +431,8 @@ def main(argv):
 
 	equation = lexicalCheck(equation)
 	equation = bringRightToLeft(equation)
-	if debug_option > 0:
-		printEquation(equation)
-	reduceEquation(equation, debug_option)
-
+	equation = reduceEquation(equation, debug_option)
+	print bcolors.HEADER + "Reduced form: " + bcolors.ENDC + stringifyEquation(equation)
 
 	print "\n\nSo far so good..!"
 
