@@ -17,7 +17,8 @@ def printUsage():
 	print 'USAGE:\n $> python computor.py [option] "polinomial equation"\n'
 	print "OPTIONS: (you need to include the '-')"
 	print ' -h\tdisplay help and exit'
-	print ' -p\tprints every step of the resolver'
+	print ' -p\tprints main steps of the resolver'
+	print ' -P\tprints every single step of the resolver'
 	sys.exit(2)
 
 
@@ -81,7 +82,16 @@ def printEquation(equation):
 		output = output + str(c)
 	output = output + " = 0"
 
-	print 'Equation ==> ' + output
+	print bcolors.OKBLUE + 'Equation ==> ' + bcolors.ENDC + output
+
+def humanizeArray(extract):
+	output = ""
+	for c in extract:
+		if not output == "":
+			output = output + " "
+		output = output + str(c)
+
+	return output
 
 
 def ft_pow(base, power):
@@ -96,19 +106,22 @@ def ft_pow(base, power):
 
 
 def parseArgv(argv):
-	debug_option = False
+	debug_option = 0
 	equation = ""
 	argc = len(argv)
 	if argc == 1:
 		exitWithError(-1)
 	elif sys.argv[1] == "-h":
 		printUsage()
-	elif sys.argv[1] == "-p":
+	elif sys.argv[1] == "-p" or sys.argv[1] == "-P":
 	 	if argc == 2:
 			exitWithError(-1)
 		elif argc > 3:
 			exitWithError(-2)
-		debug_option = True
+		if sys.argv[1] == "-p":
+			debug_option = 1
+		else:
+			debug_option = 2
 		equation = sys.argv[2]
 	elif argc == 2:
 		equation = sys.argv[1]
@@ -125,6 +138,8 @@ def lexicalCheck(equation):
 	decimalCount = 0
 	isTmpNumber = False
 	isDecimal = False
+	leftSide = True
+	count = 0
 	for c in equation:
 		if not c in okChars:
 			if not c.isdigit():
@@ -142,6 +157,19 @@ def lexicalCheck(equation):
 					tmpNumber = float(c)
 					isTmpNumber = True
 		else:
+			if c == '(':
+				count += 1
+			elif c == ')':
+				if count == 0:
+					exitWithError(-6)
+				count -= 1
+			elif c == '=':
+				if not leftSide:
+					exitWithError(-9)
+				elif not count == 0:
+					exitWithError(-6)
+				leftSide = False
+
 			if c == '.':
 				if not isTmpNumber or isDecimal:
 					exitWithError(-13)
@@ -164,6 +192,8 @@ def lexicalCheck(equation):
 		exitWithError(-4)
 	elif not '=' in splitEquation:
 		exitWithError(-5)
+	elif not count  == 0:
+		exitWithError(-6)
 
 	return splitEquation
 
@@ -248,30 +278,87 @@ def replaceMinus(extract):
 
 	return extract
 
-def resolveExtract(extract):
-	extract = replaceMinus(extract)
-	print "\nMinus replaced: "
-	print extract
+def addPolynom(coefficient, grade, data):
+	if grade == None:
+		grade = 0
+	prevVal = 0
+	if grade in data:
+		prevVal = data[grade]
+	data[int(grade)] = float(coefficient) + prevVal
 
-	# TODO
-	# do all '*' annd '/', then sum the coefficients with the same grade
-	data = None
+	return data
+
+def convertDataToExpression(data):
+	extract = []
+	first = True
+	for grade, coefficient in data.viewitems():
+		if not coefficient == 0:
+			if not first:
+				extract.append('+')
+			else:
+				first = False
+			extract.append(str(coefficient))
+			extract.append(str('X'))
+			extract.append(str('^'))
+			extract.append(str(grade))
+
+	return extract
+
+def resolveExtract(extract, debug_option):
+	extract = replaceMinus(extract)
+	if debug_option > 1:
+		print bcolors.OKGREEN + "Minus replaced: " + bcolors.ENDC
+		print "\t" + humanizeArray(extract)
+
+	data = {}
 	coefficient = None
 	grade = None
 	index = 0
 	while index < len(extract):
 		currentVal = extract[index]
-		print currentVal
-		#if currentVal == '*' or '/':
-
-		if currentVal == 'X':
-			if not coefficient:
+		if currentVal == '*' or currentVal == '/':
+			if index + 1 == len(extract):
+				exitWithError(-11)
+			if not extract[index + 1] == 'X':
+				index += 1
+				nextVal = float(extract[index])
+				if currentVal == '*':
+					coefficient = coefficient * nextVal
+				else:
+					if nextVal == 0:
+						exitWithError(-17)
+					coefficient = coefficient / nextVal
+		elif currentVal == 'X':
+			if coefficient == None:
 				coefficient = 1;
+			if index + 1 == len(extract):
+				grade = 1
+			elif extract[index + 1] == '^':
+				if index + 2 == len(extract):
+					exitWithError(-11)
+				index += 2
+				grade = float(extract[index])
+			else:
+				grade = 1
+		elif currentVal == '+':
+			if index + 1 == len(extract):
+				exitWithError(-11)
+			data = addPolynom(coefficient, grade, data)
+		else :
+			coefficient = float(currentVal)
 
 		index += 1
 
-	return extract
+	data = addPolynom(coefficient, grade, data)
+	return data
 
+def resolveParenthesis(equation, rawData, start, end):
+
+	#print extract
+	equation[start + 1 : end] = convertDataToExpression(rawData)
+
+	printEquation(equation)
+	return equation
 
 def reduceEquation(equation, debug_option):
 	# TODO take out every parenthesis
@@ -290,15 +377,21 @@ def reduceEquation(equation, debug_option):
 		else:
 			extract = equation[start + 1:end]
 
-			print "Parenthesis extracted: "
-			print extract
+			if debug_option > 1:
+				print bcolors.OKGREEN + "Parenthesis extracted: " + bcolors.ENDC
+				print "\t" + humanizeArray(extract)
 
 			syntaxCheck(extract)
-			# TODO: simplify parenthesis
-			extract = resolveExtract(extract)
+			# Simplify parenthesis
+			rawData = resolveExtract(extract, debug_option)
+			if debug_option > 1:
+				print bcolors.OKGREEN + "Extract simplified: " + bcolors.ENDC
+				print "\t" + humanizeArray(convertDataToExpression(rawData))
 			# TODO: take out parenthesis
-			#nameOfFunction(extract)
+			equation = resolveParenthesis(equation, rawData, start, end)
 			# TODO: parenthesis checks
+			if debug_option > 0:
+				printEquation(equation)
 			break
 	if ')' in equation:
 		exitWithError(-66)
@@ -310,7 +403,7 @@ def main(argv):
 
 	equation = lexicalCheck(equation)
 	equation = bringRightToLeft(equation)
-	if debug_option:
+	if debug_option > 0:
 		printEquation(equation)
 	reduceEquation(equation, debug_option)
 
