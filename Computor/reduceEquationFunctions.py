@@ -142,31 +142,56 @@ def resolveExtract(extract, debug_option):
 	return data
 
 
+def getMultiplier(extract):
+	if extract[0] == '-':
+		multiplier = -1
+	else:
+		multiplier = 1
+	gradeIncrease = 0
+	index = 1
+	multiplication = True
+	while index < len(extract):
+		if extract[index] == '*':
+			multiplication = True
+		elif extract[index] == '/':
+			multiplication = False
+		elif extract[index] == 'X':
+			if multiplication:
+				gradeIncrease += 1
+			else:
+				gradeIncrease -= 1
+		else:
+			if multiplication:
+				multiplier *= float(extract[index])
+			else:
+				multiplier /= float(extract[index])
+		index += 1
+
+
+	return multiplier, gradeIncrease
+
+
 def resolveParenthesis(equation, rawData, start, end, debug_option):
 	minIndex = start
 	maxIndex = end + 1
 	notSupportedOperators = {'/', '^'}
-	if not start == 0:
+	if not minIndex == 0:
 		multiplier = 1
 		gradeIncrease = 0
-		if equation[start - 1] == '+':
+		if equation[minIndex - 1] == '+':
 			minIndex -= 1
-		elif equation[start - 1] == '-':
+		elif equation[minIndex - 1] == '-':
 			minIndex -= 1
 			multiplier = -1
 		#TODO
-		elif equation[start - 1] == '*':
+		elif equation[minIndex - 1] == '*':
 			minIndex -= 2
 			endChars = {'+', '-', '('}
-			errorChars = {'/', 'X', '^', ')'}
 			while not equation[minIndex] in endChars:
-				if equation[minIndex] in errorChars:
+				if equation[minIndex] == '^' or equation[minIndex] == ')':
 					exitWithError(-20)
-				if not equation[minIndex] == '*':
-					multiplier = multiplier * float(equation[minIndex])
 				minIndex -= 1
-			if equation[minIndex] == '-':
-				multiplier *= -1
+			multiplier, gradeIncrease = getMultiplier(equation[minIndex:start - 1])
 		else:
 			exitWithError(-20)
 
