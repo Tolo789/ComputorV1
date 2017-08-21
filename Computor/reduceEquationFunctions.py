@@ -171,15 +171,12 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 	maxIndex = end + 1
 	notSupportedOperators = {'/', '^', 'X'}
 	if not minIndex == 0:
+		minIndex -= 1
 		multiplier = 1
-		if equation[minIndex - 1] == '+' or equation[minIndex - 1] == '(':
-			minIndex -= 1
-		elif equation[minIndex - 1] == '-':
-			minIndex -= 1
+		if equation[minIndex] == '-':
 			multiplier = -1
-		#TODO
-		elif equation[minIndex - 1] == '*':
-			minIndex -= 2
+		elif equation[minIndex] == '*':
+			minIndex -= 1
 			endChars = {'+', '-', '('}
 			if equation[minIndex] in endChars:
 				exitWithError(-20)
@@ -189,13 +186,37 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 					exitWithError(-20)
 				if equation[minIndex] == '*' and equation[minIndex + 1] == '*':
 					exitWithError(-20)
+				if not equation[minIndex] == '*':
+					multiplier *= float(equation[minIndex])
 				minIndex -= 1
-			multiplier = getMultiplier(equation[minIndex:start - 1])
-		else:
+		elif not equation[minIndex] == '+' and not equation[minIndex] == '(':
 			exitWithError(-20)
-
 		if debug_option > 1:
 			printMiniStep("Parenthesis multiplayer (left-side): ", str(multiplier))
+		rawData = {grade: coefficient * multiplier for grade, coefficient in rawData.items()}
+
+	if maxIndex < len(equation):
+		endChars = {'+', '-', ')'}
+		multiplier = 1
+		if equation[maxIndex] == '*':
+			maxIndex += 1
+			if equation[maxIndex] in endChars:
+				exitWithError(-20)
+
+			while not equation[maxIndex] in endChars:
+				if equation[maxIndex] in notSupportedOperators or equation[maxIndex] == '(':
+					exitWithError(-20)
+				if equation[maxIndex] == '*' and equation[maxIndex - 1] == '*':
+					exitWithError(-20)
+				if not equation[maxIndex] == '*':
+					multiplier *= float(equation[maxIndex])
+				maxIndex += 1
+			if equation[maxIndex - 1] == '*':
+				exitWithError(-20)
+		elif not equation[maxIndex] in endChars:
+			exitWithError(-20)
+		if debug_option > 1:
+			printMiniStep("Parenthesis multiplayer (right-side): ", str(multiplier))
 		rawData = {grade: coefficient * multiplier for grade, coefficient in rawData.items()}
 
 	newExtract = convertDataToExpression(rawData)
