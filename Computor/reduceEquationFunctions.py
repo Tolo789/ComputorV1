@@ -189,10 +189,12 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 				if not equation[minIndex] == '*':
 					multiplier *= float(equation[minIndex])
 				minIndex -= 1
+			if equation[minIndex] == '-':
+				multiplier *= -1
 		elif not equation[minIndex] == '+' and not equation[minIndex] == '(':
 			exitWithError(-20)
 		if debug_option > 1:
-			printMiniStep("Parenthesis multiplayer (left-side): ", str(multiplier))
+			printMiniStep("Parenthesis multiplier (left-side): ", str(multiplier))
 		rawData = {grade: coefficient * multiplier for grade, coefficient in rawData.items()}
 
 	if maxIndex < len(equation):
@@ -216,7 +218,7 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 		elif not equation[maxIndex] in endChars:
 			exitWithError(-20)
 		if debug_option > 1:
-			printMiniStep("Parenthesis multiplayer (right-side): ", str(multiplier))
+			printMiniStep("Parenthesis multiplier (right-side): ", str(multiplier))
 		rawData = {grade: coefficient * multiplier for grade, coefficient in rawData.items()}
 
 	newExtract = convertDataToExpression(rawData)

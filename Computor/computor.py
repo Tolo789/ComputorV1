@@ -3,6 +3,7 @@
 import sys
 from printFunctions import printUsage, exitWithError
 from reduceEquationFunctions import reduceEquation
+from resolveEquationFunctions import resolveEquation
 
 def ft_pow(base, power):
 	i = 0
@@ -138,6 +139,7 @@ def main(argv):
 	equation = lexicalCheck(equation)
 	equation = bringRightToLeft(equation)
 	equation = reduceEquation(equation, debug_option)
+	resolveEquation(equation, debug_option)
 
 	print "\n\nSo far so good..!"
 
