@@ -65,7 +65,7 @@ def exitWithError(error):
 	elif error == -19:
 		message = "Grades of 'X' must be integers !!\n"
 	elif error == -20:
-		message = "Check your syntax around parenthesis please !!\n"
+		message = "Syntax error around parenthesis !!\n"
 	else:
 		message = bcolors.WARNING + 'Are you sure to know how to call this function ? (Error code: ' + str(error) + ')'
 
@@ -91,14 +91,6 @@ def stringifyEquation(equation):
 	return output
 
 
-def printMainStep(header, message):
-	print bcolors.HEADER + header + bcolors.ENDC + message
-
-
-def printMediumStep(equation):
-	print bcolors.OKBLUE + 'Equation ==> ' + bcolors.ENDC + stringifyEquation(equation)
-
-
 def humanizeArray(extract):
 	output = ""
 	for c in extract:
@@ -108,6 +100,14 @@ def humanizeArray(extract):
 	return output
 
 
-def printMiniStep(message, extract):
-	print bcolors.OKGREEN + message + bcolors.ENDC
-	print "\t" + humanizeArray(extract)
+def printMainStep(header, message):
+	print bcolors.HEADER + header + bcolors.ENDC + message
+
+
+def printMediumStep(equation):
+	print bcolors.OKBLUE + 'Equation ==> ' + bcolors.ENDC + stringifyEquation(equation)
+
+
+def printMiniStep(header, message):
+	print bcolors.OKGREEN + header + bcolors.ENDC
+	print "\t" + message

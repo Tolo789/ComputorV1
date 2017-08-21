@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from printFunctions import exitWithError, printMainStep, printMediumStep, printMiniStep, stringifyEquation
+from printFunctions import exitWithError, printMainStep, printMediumStep, printMiniStep, stringifyEquation, humanizeArray
 
 def syntaxCheck(extract):
 	length = len(extract)
@@ -63,7 +63,7 @@ def addPolynom(coefficient, grade, data):
 		grade = 0
 	prevVal = 0
 	if grade in data:
-		prevVal = data[grade]
+		prevVal = data[int(grade)]
 	data[int(grade)] = float(coefficient) + prevVal
 
 	return data
@@ -81,21 +81,22 @@ def convertDataToExpression(data):
 				extract.append('+')
 			else:
 				first = False
-			if not float(coefficient) == 1:
+			if not float(coefficient) == 1 or float(grade) == 0:
 				extract.append(str(coefficient))
-			#extract.append(str('*'))
+			# extract.append(str('*'))
 			if not float(grade) == 0:
-				extract.append(str('X'))
+				extract.append('X')
 				if not float(grade) == 1:
-					extract.append(str('^'))
+					extract.append('^')
 					extract.append(str(grade))
-
+	if len(extract) == 0:
+		extract.append('0')
 	return extract
 
 def resolveExtract(extract, debug_option):
 	extract = replaceMinus(extract)
 	if debug_option > 1:
-		printMiniStep("Minus replaced: ", extract)
+		printMiniStep("Minus replaced: ", humanizeArray(extract))
 
 	data = {}
 	coefficient = None
@@ -147,7 +148,6 @@ def getMultiplier(extract):
 		multiplier = -1
 	else:
 		multiplier = 1
-	gradeIncrease = 0
 	index = 1
 	multiplication = True
 	while index < len(extract):
@@ -155,11 +155,6 @@ def getMultiplier(extract):
 			multiplication = True
 		elif extract[index] == '/':
 			multiplication = False
-		elif extract[index] == 'X':
-			if multiplication:
-				gradeIncrease += 1
-			else:
-				gradeIncrease -= 1
 		else:
 			if multiplication:
 				multiplier *= float(extract[index])
@@ -168,17 +163,16 @@ def getMultiplier(extract):
 		index += 1
 
 
-	return multiplier, gradeIncrease
+	return multiplier
 
 
 def resolveParenthesis(equation, rawData, start, end, debug_option):
 	minIndex = start
 	maxIndex = end + 1
-	notSupportedOperators = {'/', '^'}
+	notSupportedOperators = {'/', '^', 'X'}
 	if not minIndex == 0:
 		multiplier = 1
-		gradeIncrease = 0
-		if equation[minIndex - 1] == '+':
+		if equation[minIndex - 1] == '+' or equation[minIndex - 1] == '(':
 			minIndex -= 1
 		elif equation[minIndex - 1] == '-':
 			minIndex -= 1
@@ -187,15 +181,22 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 		elif equation[minIndex - 1] == '*':
 			minIndex -= 2
 			endChars = {'+', '-', '('}
+			if equation[minIndex] in endChars:
+				exitWithError(-20)
+
 			while not equation[minIndex] in endChars:
-				if equation[minIndex] == '^' or equation[minIndex] == ')':
+				if equation[minIndex] in notSupportedOperators or equation[minIndex] == ')':
+					exitWithError(-20)
+				if equation[minIndex] == '*' and equation[minIndex + 1] == '*':
 					exitWithError(-20)
 				minIndex -= 1
-			multiplier, gradeIncrease = getMultiplier(equation[minIndex:start - 1])
+			multiplier = getMultiplier(equation[minIndex:start - 1])
 		else:
 			exitWithError(-20)
 
-		rawData = {grade + gradeIncrease: coefficient * multiplier for grade, coefficient in rawData.items()}
+		if debug_option > 1:
+			printMiniStep("Parenthesis multiplayer (left-side): ", str(multiplier))
+		rawData = {grade: coefficient * multiplier for grade, coefficient in rawData.items()}
 
 	newExtract = convertDataToExpression(rawData)
 	if not minIndex == 0:
@@ -204,7 +205,7 @@ def resolveParenthesis(equation, rawData, start, end, debug_option):
 		elif minIndex > 1 and not equation[minIndex - 1] == '(' and not newExtract[0] == '-':
 			newExtract.insert(0, '+')
 	if debug_option > 1:
-		printMiniStep("Parenthesis solved: ", newExtract)
+		printMiniStep("Parenthesis solved: ", humanizeArray(newExtract))
 	equation[minIndex: maxIndex] = newExtract
 
 	return equation
@@ -229,12 +230,12 @@ def reduceEquation(equation, debug_option):
 			extract = equation[start + 1:end]
 
 			if debug_option > 1:
-				printMiniStep("Parenthesis extracted: ", extract)
+				printMiniStep("Parenthesis extracted: ", humanizeArray(extract))
 
 			syntaxCheck(extract)
 			rawData = resolveExtract(extract, debug_option)
 			if debug_option > 1:
-				printMiniStep("Extract simplified: ", convertDataToExpression(rawData))
+				printMiniStep("Extract simplified: ", humanizeArray(convertDataToExpression(rawData)))
 			# TODO: take out parenthesis
 			equation = resolveParenthesis(equation, rawData, start, end, debug_option)
 	if ')' in equation:
