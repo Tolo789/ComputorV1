@@ -4,17 +4,7 @@ import sys
 from printFunctions import printUsage, exitWithError
 from reduceEquationFunctions import reduceEquation
 from resolveEquationFunctions import resolveEquation
-
-def ft_pow(base, power):
-	i = 0
-	ret = 1
-	if power <= 0:
-		return 1
-	while i < power:
-		ret *= base
-		i += 1
-	return ret
-
+from mathFunctions import ftPow
 
 def parseArgv(argv):
 	debug_option = 0
@@ -59,7 +49,7 @@ def lexicalCheck(equation):
 			else:
 				if isDecimal:
 					decimalCount += 1
-					c = int(c) / float(ft_pow(10, decimalCount))
+					c = int(c) / float(ftPow(10, decimalCount))
 					tmpNumber += c
 				elif isTmpNumber:
 					if tmpNumber == 0:
@@ -141,6 +131,6 @@ def main(argv):
 	equation = reduceEquation(equation, debug_option)
 	resolveEquation(equation, debug_option)
 
-	print "\n\nSo far so good..!"
+	return 0
 
 main(sys.argv)

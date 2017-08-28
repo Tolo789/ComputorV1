@@ -2,23 +2,43 @@
 
 from printFunctions import exitWithError, printMainStep, printMediumStep, printMiniStep
 from reduceEquationFunctions import resolveExtract
-
-
-def ftSquare(val):
-	#TODO
-	result = 0
-
-	return result
+from mathFunctions import isInt, ftSquare, simplifyFraction
 
 
 def getDelta(valA, valB, valC):
-	#TODO
 	delta = valB * valB - 4 * valA * valC
 	complexNumber = False
-	if delta > 0:
+	if delta < 0:
 		complexNumber = True
 		delta *= -1
+	if not delta == 0:
+		delta = ftSquare(delta)
 	return delta, complexNumber
+
+def getRealSolution(upVal, downVal):
+	if not upVal == 0 and not downVal == 1 and isInt(upVal) and isInt(downVal):
+		upVal, downVal = simplifyFraction(upVal, downVal)
+	solution = upVal / downVal
+	if isInt(solution):
+		solution = int(solution)
+	solutionStr = "\n\t" + str(solution)
+	if not upVal == 0 and not downVal == 1 and isInt(upVal) and isInt(downVal):
+		solutionStr += " (Fraction equivalent: " + str(int(upVal)) + "/" + str(int(downVal)) + ")"
+	return solutionStr
+
+
+def getSolutions(valA, valB, delta, complexNumber):
+	solutionsStr = ""
+	valB *= -1
+	valA *= 2
+	if complexNumber:
+		solutionsStr = ""
+	else:
+		solutionsStr += getRealSolution(valB + delta, valA)
+		if not delta == 0:
+			solutionsStr += getRealSolution(valB - delta, valA)
+	return solutionsStr
+
 
 
 def resolveEquation(equation, debug_option):
@@ -48,24 +68,28 @@ def resolveEquation(equation, debug_option):
 		grade = 0
 
 	printMainStep("Polynomial degree: ", str(grade))
+	message = ""
 	if grade > 2:
-		printMainStep("The polynomial degree is stricly greater than 2, I can't solve.", "")
+		header = "The polynomial degree is stricly greater than 2, I can't solve."
 	elif grade == 2:
 		delta, complexNumber = getDelta(valA, valB, valC)
 
 		if delta == 0:
 			header = "Discriminant is equal to zero, the solution is:"
-		elif not complexNumber:
-			header = "Discriminant is strictly positive, the two solutions are:"
-		else:
+		elif complexNumber:
 			header = "Discriminant is strictly negative, the two complex solutions are:"
-			# TODO
-		message = ""
-		printMainStep(header, message)
+		else:
+			header = "Discriminant is strictly positive, the two solutions are:"
+		# TODO
+		message = getSolutions(valA, valB, delta, complexNumber)
 	elif grade == 1:
-		printMainStep("The only solution is: ", str(-valC / valB))
+		header = "The solution is: "
+		message = getRealSolution(-valC, valB)
 	elif grade == 0:
 		if valC == 0:
-			printMainStep("The equation is true for every value of X !", "")
+			header = "The equation is true for every value of X !"
 		else:
-			printMainStep("The equation has no possible solutions..!", "")
+			header = "The equation has no possible solutions..!"
+
+	printMainStep(header, message)
+	return 0
