@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
-from printFunctions import exitWithError, printMainStep, printMediumStep, printMiniStep
+from printFunctions import exitWithError, printMainStep, printMiniStep
 from reduceEquationFunctions import resolveExtract
-from mathFunctions import isInt, ftSquare, simplifyFraction
+from mathFunctions import isInt, ftSquare, ftMCD
 
 
-def getDelta(valA, valB, valC):
+def getDelta(valA, valB, valC, debug_option):
+	if debug_option > 1:
+		printMiniStep("Getting delta (square of):", str(valB) + "^2 - 4 * " + str(valA) + " * " + str(valC))
 	delta = valB * valB - 4 * valA * valC
 	complexNumber = False
 	if delta < 0:
@@ -15,15 +17,42 @@ def getDelta(valA, valB, valC):
 		delta = ftSquare(delta)
 	return delta, complexNumber
 
-def getRealSolution(upVal, downVal):
-	if not upVal == 0 and not downVal == 1 and isInt(upVal) and isInt(downVal):
-		upVal, downVal = simplifyFraction(upVal, downVal)
-	solution = upVal / downVal
-	if isInt(solution):
-		solution = int(solution)
-	solutionStr = "\n\t" + str(solution)
-	if not upVal == 0 and not downVal == 1 and isInt(upVal) and isInt(downVal):
-		solutionStr += " (Fraction equivalent: " + str(int(upVal)) + "/" + str(int(downVal)) + ")"
+
+def getSolution(realVal, imagVal, downVal):
+	mcd = 1
+	if not realVal == 0 and not downVal == 1 and isInt(realVal) and isInt(downVal):
+		mcd = ftMCD (realVal, downVal)
+	if not imagVal == 0 and isInt(imagVal) and isInt(mcd):
+		mcd = ftMCD (imagVal, mcd)
+	realVal /= mcd
+	imagVal /= mcd
+	downVal /= mcd
+
+	realRes = realVal / downVal
+	realStr = ""
+	if isInt(realRes):
+		realRes = int(realRes)
+	if not realRes == 0:
+		realStr = str(realRes)
+		if not downVal == 1 and isInt(realVal) and isInt(downVal):
+			realStr += " (" + str(int(realVal)) + "/" + str(int(downVal)) + ")"
+	elif imagVal == 0:
+		realStr = "0"
+
+	imagRes = imagVal / downVal
+	imagStr = ""
+	if isInt(imagRes):
+		imagRes = int(imagRes)
+	if not imagRes == 0:
+		if not realStr == "":
+			imagStr = " + "
+		imagStr += str(imagRes) + "i"
+		if not downVal == 1 and isInt(imagVal) and isInt(downVal):
+			imagStr += " (" + str(int(imagVal)) + "/" + str(int(downVal)) + ")"
+
+
+	solutionStr = "\n\t" + realStr + imagStr
+
 	return solutionStr
 
 
@@ -32,11 +61,12 @@ def getSolutions(valA, valB, delta, complexNumber):
 	valB *= -1
 	valA *= 2
 	if complexNumber:
-		solutionsStr = ""
+		solutionsStr += getSolution(valB, delta, valA)
+		solutionsStr += getSolution(valB, -delta, valA)
 	else:
-		solutionsStr += getRealSolution(valB + delta, valA)
+		solutionsStr += getSolution(valB + delta, 0, valA)
 		if not delta == 0:
-			solutionsStr += getRealSolution(valB - delta, valA)
+			solutionsStr += getSolution(valB - delta, 0, valA)
 	return solutionsStr
 
 
@@ -72,7 +102,13 @@ def resolveEquation(equation, debug_option):
 	if grade > 2:
 		header = "The polynomial degree is stricly greater than 2, I can't solve."
 	elif grade == 2:
-		delta, complexNumber = getDelta(valA, valB, valC)
+		delta, complexNumber = getDelta(valA, valB, valC, debug_option)
+		if debug_option > 1:
+			strEquation =  "(-" + str(valB) + " +- " + str(delta)
+			if complexNumber:
+				strEquation += "i"
+			strEquation += ") / (2 * " + str(valA) + ")"
+			printMiniStep("Solutions:", strEquation)
 
 		if delta == 0:
 			header = "Discriminant is equal to zero, the solution is:"
@@ -80,11 +116,10 @@ def resolveEquation(equation, debug_option):
 			header = "Discriminant is strictly negative, the two complex solutions are:"
 		else:
 			header = "Discriminant is strictly positive, the two solutions are:"
-		# TODO
 		message = getSolutions(valA, valB, delta, complexNumber)
 	elif grade == 1:
 		header = "The solution is: "
-		message = getRealSolution(-valC, valB)
+		message = getSolution(-valC, 0, valB)
 	elif grade == 0:
 		if valC == 0:
 			header = "The equation is true for every value of X !"

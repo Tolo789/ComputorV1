@@ -259,7 +259,6 @@ def reduceEquation(equation, debug_option):
 			rawData = resolveExtract(extract, debug_option)
 			if debug_option > 1:
 				printMiniStep("Extract simplified: ", humanizeArray(convertDataToExpression(rawData)))
-			# TODO: take out parenthesis
 			equation = resolveParenthesis(equation, rawData, start, end, debug_option)
 	if ')' in equation:
 		exitWithError(-6)

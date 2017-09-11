@@ -12,14 +12,6 @@ def ftMCD(a,b):
     return a
 
 
-def simplifyFraction(upVal, downVal):
-	mcd = ftMCD(upVal, downVal)
-	if not mcd == 1:
-		upVal /= mcd
-		downVal /= mcd
-	return upVal, downVal
-
-
 def ftAbs(val):
 	if val < 0:
 		val *= -1
